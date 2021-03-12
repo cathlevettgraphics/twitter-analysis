@@ -30,36 +30,41 @@ const client = new Twitter({
 const app = express();
 app.use(express.static('public'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+// for parsing application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
 
 // GET tweets – search for text / hashtag
-// search tweets API page – https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets
-const TWITTER = 'https://api.twitter.com/1.1/';
+// https://developer.twitter.com/en/docs/twitter-api/v1/tweets/search/api-reference/get-search-tweets
 const API_ENDPOINT = 'search/tweets.json';
-const FULL_API_ENDPOINT = `${TWITTER}${API_ENDPOINT}`;
 
+// post responses to my local server
 app.post('/api/v1/get-tweets', (req, res) => {
   // get params from form input
   console.log('testing', req.body);
 
-  const { params } = req.body;
+  // get search term from form
+  const { search } = req.body;
 
+  // get tweets
   (async () => {
     try {
       const response = await client.get(
-        FULL_API_ENDPOINT,
-        params,
+        API_ENDPOINT,
+        // match format in docs { q: '#etherium' }
+        { q: search, count: 50, lang: 'eu' },
+        // callback
         function (error, tweets, response) {
           if (error) {
             console.log('err', error);
+            return res.status(500).send(err);
           }
           console.log(tweets);
+          res.status(201).json(tweets);
         },
       );
-      // RES STATUS HERE
-      res.status(201).json(response);
     } catch (err) {
       console.log('err', err);
+      return res.status(500).send(err);
     }
   })();
 });
@@ -68,7 +73,7 @@ app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
 });
 
-/* working api call
+/*
 const endpoint = 'search/tweets.json';
 const params = { q: '#etherium' };
 
